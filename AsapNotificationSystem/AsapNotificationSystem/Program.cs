@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -37,7 +38,13 @@ namespace AsapNotificationSystem
 
         static void Main(string[] args)
         {
-
+            Console.WriteLine(Directory.GetCurrentDirectory());
+            Console.WriteLine(string.Join("\n", Directory.GetDirectories(Directory.GetCurrentDirectory())));
+            Console.WriteLine();
+            Console.WriteLine(Directory.Exists("/configs"));
+            Console.WriteLine(String.Join("\n", Directory.GetDirectories("/")));
+            Console.WriteLine();
+            Console.WriteLine(String.Join("\n", Directory.GetFiles("/configs/")));
             Init();
             Console.ReadLine();
         }

@@ -14,9 +14,6 @@ namespace AsapNotificationSystem.Source.Outlook
 {
     public class OutlookSource : ISource, IDisposable
     {
-        static string host = "outlook.office365.com";
-        static int port = 995;
-
         public event Action<IEnumerable<string>, IEnumerable<object>> NewEvent;
 
         public bool Pause
@@ -25,10 +22,12 @@ namespace AsapNotificationSystem.Source.Outlook
             set => config.Pause = value; 
         }
 
+        string host;
+        int port;
+
         private OutlookConfig config;
 
         private IParser<MimeMessage, bool> parser;
-        private Pop3Client client;
         private Task checkTask;
 
         public OutlookSource(string login, string password, IParser<MimeMessage, bool> messageParser, DateTime? emailSinceDate = null, bool start = true) 
@@ -38,7 +37,7 @@ namespace AsapNotificationSystem.Source.Outlook
                 Password = password,
                 Pause = !start,
                 Time = DateTime.MinValue,
-                Path = "outlookConfig.json"
+                Path = "configs/outlookConfig.json"
             }, messageParser) { }
 
         public OutlookSource(OutlookConfig config, IParser<MimeMessage, bool> messageParser)
@@ -48,10 +47,6 @@ namespace AsapNotificationSystem.Source.Outlook
             host = config.Host;
             port = config.Port;
 
-            client = new Pop3Client();
-            client.Connect(host, port);
-            client.Authenticate(config.Login, config.Password);
-
             Pause = config.Pause;
 
             parser = messageParser;
@@ -60,7 +55,6 @@ namespace AsapNotificationSystem.Source.Outlook
 
         public void Dispose()
         {
-            client.Disconnect(true);
             checkTask.Dispose();
         }
 
@@ -71,13 +65,10 @@ namespace AsapNotificationSystem.Source.Outlook
             {
                 if (!Pause)
                 {
-                    Console.WriteLine(emails.Count);
                     GetNewMessages(emails);
-                    Console.WriteLine(emails.Count);
 
                     if (emails.Any())
                     {
-                        Console.WriteLine(emails.Where(parser.Parse).Count());
                         emails.AsParallel().Where(parser.Parse).ForAll(x =>
                         {
                             var path = $"{new Random().Next(0, 100000000)}_{x.Attachments.First().ContentDisposition.FileName}";
@@ -91,13 +82,16 @@ namespace AsapNotificationSystem.Source.Outlook
                     }
                 }
 
-                await Task.Delay(1000);
+                await Task.Delay(1000*60*5);
             }
         }
 
         private void GetNewMessages(List<MimeMessage> emailsList)
         {
-            Console.WriteLine(":1");
+            using var client = new Pop3Client();
+            client.Connect(host, port);
+            client.Authenticate(config.Login, config.Password);
+
             if (emailsList == null)
             {
                 emailsList = new List<MimeMessage>();
@@ -108,7 +102,6 @@ namespace AsapNotificationSystem.Source.Outlook
             }
 
             var count = client.Count;
-            Console.WriteLine(":2");
             if (count == 0)
             {
                 config.Time = DateTime.Now;
@@ -122,9 +115,7 @@ namespace AsapNotificationSystem.Source.Outlook
                 }
                 else
                 {
-                    Console.WriteLine(config.Time);
                     Console.WriteLine(client.GetMessage(count - 1).Date.LocalDateTime);
-                    Console.WriteLine(client.GetMessage(0).Date.LocalDateTime);
                     for (int i = count - 1; i >= 0; i--)
                     {
                         var temp = client.GetMessage(i);
@@ -137,7 +128,6 @@ namespace AsapNotificationSystem.Source.Outlook
                             break;
                         }
                     }
-                    Console.WriteLine(":3");
                     if (emailsList.Any())
                     {
                         config.Time = emailsList[0].Date.LocalDateTime;
@@ -145,7 +135,6 @@ namespace AsapNotificationSystem.Source.Outlook
                     }
                 }
             }
-            Console.WriteLine(":4");
         }
 
         public static void SaveAttachment(MimeEntity attachment, FileStream fs)

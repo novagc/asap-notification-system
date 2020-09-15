@@ -38,15 +38,14 @@ namespace AsapNotificationSystem
 
         static void Main(string[] args)
         {
-            Console.WriteLine(Directory.GetCurrentDirectory());
-            Console.WriteLine(string.Join("\n", Directory.GetDirectories(Directory.GetCurrentDirectory())));
-            Console.WriteLine();
-            Console.WriteLine(Directory.Exists("/configs"));
-            Console.WriteLine(String.Join("\n", Directory.GetDirectories("/")));
-            Console.WriteLine();
-            Console.WriteLine(String.Join("\n", Directory.GetFiles("/configs/")));
             Init();
-            Console.ReadLine();
+
+            Console.WriteLine("Start!");
+
+            while(true)
+            {
+                Console.ReadLine();
+            }
         }
 
         private static void Init()

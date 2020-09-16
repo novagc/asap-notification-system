@@ -50,9 +50,9 @@ namespace AsapNotificationSystem
 
         private static void Init()
         {
-            DataBase = new DataBaseService("/configs/dbConfig.json");
+            DataBase = new DataBaseService("configs/dbConfig.json");
 
-            var vkBot = new VkMultiBot(new BasicConfigReader<VkBotConfig>("/configs/vkBotConfig.json").ParseConfig());
+            var vkBot = new VkMultiBot(new BasicConfigReader<VkBotConfig>("configs/vkBotConfig.json").ParseConfig());
 
             SenderBots = new List<ISenderBot<string>>
             {
@@ -65,8 +65,8 @@ namespace AsapNotificationSystem
             };
 
             var oc =
-                new BasicConfigReader<OutlookConfig>("/configs/outlookConfig.json").ParseConfig();
-            oc.Path = "/configs/outlookConfig.json";
+                new BasicConfigReader<OutlookConfig>("configs/outlookConfig.json").ParseConfig();
+            oc.Path = "configs/outlookConfig.json";
 
             Sources = new List<ISource>
             {

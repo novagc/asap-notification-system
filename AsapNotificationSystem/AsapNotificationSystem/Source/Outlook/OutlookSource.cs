@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Authentication;
 using System.Threading.Tasks;
 
 using AsapNotificationSystem.Parser;
@@ -89,6 +90,8 @@ namespace AsapNotificationSystem.Source.Outlook
         private void GetNewMessages(List<MimeMessage> emailsList)
         {
             using var client = new Pop3Client();
+            client.CheckCertificateRevocation = false;
+            client.SslProtocols = SslProtocols.None;
             client.Connect(host, port);
             client.Authenticate(config.Login, config.Password);
 

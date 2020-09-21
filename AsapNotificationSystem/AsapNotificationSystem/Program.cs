@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -13,10 +14,11 @@ using AsapNotificationSystem.ConfigReaderService;
 using AsapNotificationSystem.Convert;
 using AsapNotificationSystem.DataBase;
 using AsapNotificationSystem.DataBase.Models;
+using AsapNotificationSystem.Message;
 using AsapNotificationSystem.Parser;
 using AsapNotificationSystem.Source;
-using AsapNotificationSystem.Source.Outlook;
-using AsapNotificationSystem.Source.Outlook.Config;
+using AsapNotificationSystem.Source.Email;
+using AsapNotificationSystem.Source.Email.Config;
 using Newtonsoft.Json;
 
 namespace AsapNotificationSystem
@@ -29,7 +31,9 @@ namespace AsapNotificationSystem
         public static IEnumerable<IReceiverBot<string[]>> ReceiverBots;
         public static IEnumerable<ISource> Sources;
 
-        private static VkKeyboard keyboard = new VkKeyboard(Enumerable.Range(0, 36)
+        private static List<MessageModel> _messages = new List<MessageModel>();
+ 
+        private static VkKeyboard keyboard = new VkKeyboard(Enumerable.Range(0, 39)
             .Select((x) =>
             {
                 var temp = BnToString.Convert((BuildingNumber) x);
@@ -42,7 +46,7 @@ namespace AsapNotificationSystem
 
             Console.WriteLine("Start!");
 
-            while(true)
+            while (true)
             {
                 Console.ReadLine();
             }
@@ -50,7 +54,11 @@ namespace AsapNotificationSystem
 
         private static void Init()
         {
+            var temp = new BasicConfigReader<A>("configs/mesConfig.json").ParseConfig();
+            _messages = temp.Messages;
+
             DataBase = new DataBaseService("configs/dbConfig.json");
+            DataBase.NewUser += NewUser;
 
             var vkBot = new VkMultiBot(new BasicConfigReader<VkBotConfig>("configs/vkBotConfig.json").ParseConfig());
 
@@ -65,30 +73,28 @@ namespace AsapNotificationSystem
             };
 
             var oc =
-                new BasicConfigReader<OutlookConfig>("configs/outlookConfig.json").ParseConfig();
-            oc.Path = "configs/outlookConfig.json";
+                new BasicConfigReader<EmailConfig>("configs/emailConfig.json").ParseConfig();
+            oc.Path = "configs/emailConfig.json";
 
             Sources = new List<ISource>
             {
-                new OutlookSource(
+                new EmailSource(
                     oc,
-                    new EmailParser(new []{ "novagc@yandex.ru" }, null, true))
+                    new EmailParser(null, null, true, new []{"отключение.xls", "отключение.xlsx"}))
             };
 
             ReceiverBots.First().NewMessage += (_, data) =>
             {
                 var text = "Меню";
                 var kb = keyboard.Clone();
+                var temp = StringToBnConverter.Convert(data[0]);
 
-                if (data[2] != null)
+                if (temp != BuildingNumber.Other)
                 {
-                    var pl = JsonConvert.DeserializeObject<Payload>(data[2]);
-                    Console.WriteLine(pl.button);
-                    var num = StringToBnConverter.Convert(pl.button);
-                    DataBase.ChangeBuildingNumber(0, data[1], num);
+                    DataBase.ChangeBuildingNumber(0, data[1], temp);
                     text = "Ок";
-                }
-
+                } 
+                    
                 foreach (var bn in DataBase.GetUserBn(0, data[1]))
                 {
                     ((VkButton) (kb.Buttons[System.Convert.ToInt32(bn)])).Color = "negative";
@@ -100,19 +106,39 @@ namespace AsapNotificationSystem
             {
                 var tPath = a.Skip(2).First();
                 var mess = new ExcelParser().Parse(tPath);
- 
+                
+                _messages.AddRange(mess);
+                File.WriteAllText("configs/mesConfig.json", JsonConvert.SerializeObject(new A{Messages = _messages}));
+                
                 mess.AsParallel().ForAll(x =>
                 {
                     var temp = DataBase.SelectUsersByBuildingNumber(x.BuildingNumber);
                     
-                    SenderBots.First().SendMassMessage($"В корпусе {BnToString.Convert(x.BuildingNumber)} c {x.From} по {x.To} будут отключены: {x.What}", temp);
+                    SenderBots.First().SendMassMessage(x.BuildingNumber == BuildingNumber.All
+                        ? $"Во всех корпусах c {x.From} по {x.To} будут отключены: {x.What}"
+                        : $"В корпусе {BnToString.Convert(x.BuildingNumber)} c {x.From} по {x.To} будут отключены: {x.What}", temp);
                 });
             };
         }
+
+        private static void NewUser(User user)
+        {
+            _messages.AsParallel().ForAll(x =>
+            {
+                if (x.TimeTo >= DateTime.Now && (x.BuildingNumber == BuildingNumber.All || user.Number.Contains(x.BuildingNumber)))
+                {
+                    SenderBots.First().SendMessage(
+                        x.BuildingNumber == BuildingNumber.All
+                            ? $"Во всех корпусах c {x.From} по {x.To} будут отключены: {x.What}"
+                            : $"В корпусе {BnToString.Convert(x.BuildingNumber)} c {x.From} по {x.To} будут отключены: {x.What}",
+                        user.ProfileId);
+                }
+            });
+        }
     }
 
-    public class Payload
+    public class A
     {
-        public string button { get; set; }
+        public List<MessageModel> Messages { get; set; }
     }
 }

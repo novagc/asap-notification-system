@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -21,7 +22,7 @@ namespace AsapNotificationSystem.Parser
         {
             var mtDict = new Dictionary<string, int>
             {
-                { "Корпус", -1 },
+                { "Корпус (Кампус ДВФУ) / Общежитие (материк)", -1 },
                 { "Дата начала работ", -1},
                 { "Время начала работ", -1 },
                 { "Дата окончания работ", -1 },
@@ -49,27 +50,41 @@ namespace AsapNotificationSystem.Parser
 
             Enumerable.Range(0, count).AsParallel().ForAll(x =>
             {
-                var mes = new MessageModel();
-                var d = new Dictionary<string, string>();
-
-                foreach (var col in mtDict.Keys)
+                try
                 {
-                    d.Add(col, "");
+                    var mes = new MessageModel();
+                    var d = new Dictionary<string, string>();
+
+                    foreach (var col in mtDict.Keys)
+                    {
+                        d.Add(col, "");
+                    }
+
+                    mtDict.Keys.AsParallel().ForAll(i =>
+                    {
+                        d[i] = ws.Cells[2 + x, mtDict[i]].First().Text;
+                    });
+
+                    mes.BuildingNumber = StringToBnConverter.Convert(d["Корпус (Кампус ДВФУ) / Общежитие (материк)"]);
+
+                    if (mes.BuildingNumber == BuildingNumber.Other)
+                        throw new Exception();
+
+                    mes.From = $"{d["Дата начала работ"].Replace('/', '.')} {d["Время начала работ"]}";
+                    mes.To = $"{d["Дата окончания работ"].Replace('/', '.')} {d["Время окончания работ"]}";
+                    mes.What = d["Отключаемые системы"];
+
+                    mes.TimeFrom = DateTime.Parse(mes.From);
+                    mes.TimeTo = DateTime.Parse(mes.To);
+                
+                    lock (res)
+                    {
+                        res.Add(mes);
+                    }
                 }
-
-                mtDict.Keys.AsParallel().ForAll(i =>
+                catch
                 {
-                    d[i] = ws.Cells[2 + x, mtDict[i]].First().Text;
-                });
-
-                mes.BuildingNumber = StringToBnConverter.Convert(d["Корпус"]);
-                mes.From = $"{d["Дата начала работ"]} {d["Время начала работ"]}";
-                mes.To = $"{d["Дата окончания работ"]} {d["Время окончания работ"]}";
-                mes.What = d["Отключаемые системы"];
-
-                lock (res)
-                {
-                    res.Add(mes);
+                    // ignored
                 }
             });
 

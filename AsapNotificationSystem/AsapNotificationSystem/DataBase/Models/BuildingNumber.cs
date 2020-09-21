@@ -38,6 +38,9 @@
         SOne,
         STwo,
         S,
+        M19,
+        M19a,
+        M21,
         All,
         Other
     }

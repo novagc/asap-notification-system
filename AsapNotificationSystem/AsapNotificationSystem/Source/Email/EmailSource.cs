@@ -1,19 +1,17 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Authentication;
 using System.Threading.Tasks;
-
 using AsapNotificationSystem.Parser;
-using AsapNotificationSystem.Source.Outlook.Config;
-
+using AsapNotificationSystem.Source.Email.Config;
 using MailKit.Net.Pop3;
 using MimeKit;
 
-namespace AsapNotificationSystem.Source.Outlook
+namespace AsapNotificationSystem.Source.Email
 {
-    public class OutlookSource : ISource, IDisposable
+    public class EmailSource : ISource, IDisposable
     {
         public event Action<IEnumerable<string>, IEnumerable<object>> NewEvent;
 
@@ -26,22 +24,22 @@ namespace AsapNotificationSystem.Source.Outlook
         string host;
         int port;
 
-        private OutlookConfig config;
+        private EmailConfig config;
 
         private IParser<MimeMessage, bool> parser;
         private Task checkTask;
 
-        public OutlookSource(string login, string password, IParser<MimeMessage, bool> messageParser, DateTime? emailSinceDate = null, bool start = true) 
-            :this(new OutlookConfig
+        public EmailSource(string login, string password, IParser<MimeMessage, bool> messageParser, DateTime? emailSinceDate = null, bool start = true) 
+            :this(new EmailConfig
             {
                 Login = login,
                 Password = password,
                 Pause = !start,
                 Time = DateTime.MinValue,
-                Path = "configs/outlookConfig.json"
+                Path = "configs/emailConfig.json"
             }, messageParser) { }
 
-        public OutlookSource(OutlookConfig config, IParser<MimeMessage, bool> messageParser)
+        public EmailSource(EmailConfig config, IParser<MimeMessage, bool> messageParser)
         {
             this.config = config;
 
@@ -83,15 +81,13 @@ namespace AsapNotificationSystem.Source.Outlook
                     }
                 }
 
-                await Task.Delay(1000*60*5);
+                await Task.Delay(1000*5);
             }
         }
 
         private void GetNewMessages(List<MimeMessage> emailsList)
         {
             using var client = new Pop3Client();
-            client.CheckCertificateRevocation = false;
-            client.SslProtocols = SslProtocols.None;
             client.Connect(host, port);
             client.Authenticate(config.Login, config.Password);
 
@@ -118,8 +114,8 @@ namespace AsapNotificationSystem.Source.Outlook
                 }
                 else
                 {
-                    Console.WriteLine(client.GetMessage(count - 1).Date.LocalDateTime);
-                    for (int i = count - 1; i >= 0; i--)
+                    Console.WriteLine(client.GetMessage(0).Date.LocalDateTime);
+                    for (int i = 0; i < count; i++)
                     {
                         var temp = client.GetMessage(i);
                         if (temp.Date.LocalDateTime > config.Time)

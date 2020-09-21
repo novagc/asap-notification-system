@@ -44,7 +44,10 @@ namespace AsapNotificationSystem.Convert
             { BuildingNumber.M             , "M"    },
             { BuildingNumber.SOne          , "S1"   },
             { BuildingNumber.STwo          , "S2"   },
-            { BuildingNumber.S             , "S"    }
+            { BuildingNumber.S             , "S"    },
+            { BuildingNumber.M19           , "ул. Дер. 19"    },
+            { BuildingNumber.M19a          , "ул. Дер. 19a"   },
+            { BuildingNumber.M21           , "ул. Дер. 21"    },
         };
 
         public static string Convert(BuildingNumber bn) => bnToStringDictionary.ContainsKey(bn) ? bnToStringDictionary[bn] : "other";

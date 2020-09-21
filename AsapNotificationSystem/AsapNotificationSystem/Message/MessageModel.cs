@@ -11,5 +11,8 @@ namespace AsapNotificationSystem.Message
         public string From { get; set; }
         public string To { get; set; }
         public string What { get; set; }
+
+        public DateTime TimeFrom { get; set; }
+        public DateTime TimeTo { get; set; }
     }
 }

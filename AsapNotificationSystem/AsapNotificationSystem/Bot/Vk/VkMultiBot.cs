@@ -160,7 +160,6 @@ namespace AsapNotificationSystem.Bot.Vk
                                     {
                                         update.MessageNew.Message.Text,
                                         update.MessageNew.Message.FromId?.ToString(),
-                                        update.MessageNew.Message.Payload
                                     };
 
                                     NewMessage?.Invoke(null, data);

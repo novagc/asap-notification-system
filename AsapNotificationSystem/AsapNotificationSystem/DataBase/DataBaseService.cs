@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using AsapNotificationSystem.ConfigReaderService;
 using AsapNotificationSystem.DataBase.Config;
 using AsapNotificationSystem.DataBase.Context;
@@ -11,6 +12,7 @@ namespace AsapNotificationSystem.DataBase
 {
     public class DataBaseService
     {
+        public event Action<User> NewUser;
         public string ConfigPath { get; }
 
         private DbConfig config;
@@ -40,14 +42,16 @@ namespace AsapNotificationSystem.DataBase
                 };
 
                 context.Users.Add(user);
+                context.SaveChanges();
+                Task.Factory.StartNew(() => NewUser?.Invoke(user));
             }
             else
             {
                 user = context.Users.Find(id);
                 user.SendNotification = true;
+                context.SaveChanges();
             }
 
-            context.SaveChanges();
             return user.Id;
         }
 
@@ -70,14 +74,16 @@ namespace AsapNotificationSystem.DataBase
                 };
 
                 context.Users.Add(user);
+                context.SaveChanges();
+                Task.Factory.StartNew(() => NewUser?.Invoke(user));
             }
             else
             {
                 user = context.Users.Find(id);
                 user.SendNotification = false;
+                context.SaveChanges();
             }
 
-            context.SaveChanges();
             return user.Id;
         }
 
@@ -115,17 +121,19 @@ namespace AsapNotificationSystem.DataBase
             }
             else
             {
-                context.Users.Add(new User
+                var user = new User
                 {
-                    ProfileId = profileId, 
-                    ServiceId = serviceId, 
-                    SendNotification = true, 
-                    Number = new []{ bNumber }
-                });
+                    ProfileId = profileId,
+                    ServiceId = serviceId,
+                    SendNotification = true,
+                    Number = new[] {bNumber}
+                }; 
 
+                context.Users.Add(user);
                 context.SaveChanges();
 
-                id = GetUserId(serviceId, profileId, context);
+                id = user.Id;
+                Task.Factory.StartNew(() => NewUser?.Invoke(user));
             }
 
             return id;
@@ -134,6 +142,9 @@ namespace AsapNotificationSystem.DataBase
         public IEnumerable<string> SelectUsersByBuildingNumber(BuildingNumber buildingNumber, int? serviceId = null)
         {
             using var context = new PostgresDbContext(config);
+
+            if (buildingNumber == BuildingNumber.All)
+                return context.Users.Select(x => x.ProfileId).ToList();
 
             if (serviceId != null)
             {

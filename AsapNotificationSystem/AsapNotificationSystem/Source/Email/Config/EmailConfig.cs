@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Newtonsoft.Json;
 
-namespace AsapNotificationSystem.Source.Outlook.Config
+namespace AsapNotificationSystem.Source.Email.Config
 {
-    public class OutlookConfig
+    public class EmailConfig
     {
         [JsonIgnore]
         private DateTime time;

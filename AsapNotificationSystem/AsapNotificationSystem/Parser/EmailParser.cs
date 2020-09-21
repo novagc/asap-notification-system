@@ -36,7 +36,7 @@ namespace AsapNotificationSystem.Parser
                     return false;
 
                 if (attachmentNames != null &&
-                    message.Attachments.Any(x => !attachmentNames.Contains(x.ContentDisposition.FileName)))
+                    message.Attachments.Any(x => !attachmentNames.Contains(x.ContentDisposition.FileName.ToLower())))
                     return false;
             }
             catch

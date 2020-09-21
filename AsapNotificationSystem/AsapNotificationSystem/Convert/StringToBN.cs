@@ -44,15 +44,24 @@ namespace AsapNotificationSystem.Convert
             { "M"   , BuildingNumber.M             },
             { "S1"  , BuildingNumber.SOne          },
             { "S2"  , BuildingNumber.STwo          },
-            { "S"   , BuildingNumber.S             }
+            { "S"   , BuildingNumber.S             },
+            { "ул. Дер. 19", BuildingNumber.M19},
+            { "ул. Дер. 19a", BuildingNumber.M19a},
+            { "ул. Дер. 21", BuildingNumber.M21},
+            { "ул. Державина, 19", BuildingNumber.M19},
+            { "ул. Державина, 19a", BuildingNumber.M19a},
+            { "ул. Державина, 21", BuildingNumber.M21}
         };
 
         public static BuildingNumber Convert(string name)
         {
+            if (name.ToLower().Contains("все"))
+                return BuildingNumber.All;
+
             if (bnDictionary.ContainsKey(name))
                 return bnDictionary[name];
 
-            return BuildingNumber.All;
+            return BuildingNumber.Other;
         }
     }
 }

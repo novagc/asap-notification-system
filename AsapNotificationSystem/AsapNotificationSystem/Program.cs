@@ -85,10 +85,11 @@ namespace AsapNotificationSystem
 
             ReceiverBots.First().NewMessage += (_, data) =>
             {
+                Console.WriteLine("!");
                 var text = "Меню";
                 var kb = keyboard.Clone();
                 var temp = StringToBnConverter.Convert(data[0]);
-
+                Console.WriteLine("!!");
                 if (temp != BuildingNumber.Other)
                 {
                     DataBase.ChangeBuildingNumber(0, data[1], temp);
@@ -99,6 +100,7 @@ namespace AsapNotificationSystem
                 {
                     ((VkButton) (kb.Buttons[System.Convert.ToInt32(bn)])).Color = "negative";
                 }
+                Console.WriteLine("!!!");
                 SenderBots.First().SendMessage(text, data[1], kb);
             };
 

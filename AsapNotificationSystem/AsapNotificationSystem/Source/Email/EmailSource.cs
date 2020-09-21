@@ -81,7 +81,7 @@ namespace AsapNotificationSystem.Source.Email
                     }
                 }
 
-                await Task.Delay(1000*5);
+                await Task.Delay(1000*60*5);
             }
         }
 

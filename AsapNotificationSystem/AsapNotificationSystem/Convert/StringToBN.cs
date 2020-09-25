@@ -50,7 +50,10 @@ namespace AsapNotificationSystem.Convert
             { "ул. Дер. 21", BuildingNumber.M21},
             { "ул. Державина, 19", BuildingNumber.M19},
             { "ул. Державина, 19a", BuildingNumber.M19a},
-            { "ул. Державина, 21", BuildingNumber.M21}
+            { "ул. Державина, 21", BuildingNumber.M21},
+            { "19", BuildingNumber.M19},
+            { "19a", BuildingNumber.M19a },
+            { "21", BuildingNumber.M21 }
         };
 
         public static BuildingNumber Convert(string name)
@@ -58,8 +61,13 @@ namespace AsapNotificationSystem.Convert
             if (name.ToLower().Contains("все"))
                 return BuildingNumber.All;
 
-            foreach (var x in bnDictionary.Keys)
-                if (name.Contains(x))
+            var temp = name
+                .ToUpper()
+                .Replace(",", "")
+                .Split(new []{' '}, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var x in temp)
+                if (bnDictionary.ContainsKey(x))
                     return bnDictionary[x];
 
             return BuildingNumber.Other;

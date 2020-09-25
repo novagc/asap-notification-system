@@ -64,24 +64,26 @@ namespace AsapNotificationSystem.Source.Email
             {
                 if (!Pause)
                 {
-                    GetNewMessages(emails);
-
-                    if (emails.Any())
+                    try
                     {
-                        emails.AsParallel().Where(parser.Parse).ForAll(x =>
+                        GetNewMessages(emails);
+
+                        if (emails.Any())
                         {
-                            var path = $"{new Random().Next(0, 100000000)}_{x.Attachments.First().ContentDisposition.FileName}";
-                            using (var fs = File.Create(path))
-                                SaveAttachment(x.Attachments.First(), fs);
-                            Task.Factory.StartNew(() =>
+                            emails.AsParallel().Where(parser.Parse).ForAll(x =>
                             {
-                                NewEvent?.Invoke(new[] {"OLV1", "file", path }, null);
+                                var path =
+                                    $"{new Random().Next(0, 100000000)}_{x.Attachments.First().ContentDisposition.FileName}";
+                                using (var fs = File.Create(path))
+                                    SaveAttachment(x.Attachments.First(), fs);
+                                Task.Factory.StartNew(() => { NewEvent?.Invoke(new[] {"OLV1", "file", path}, null); });
                             });
-                        });
+                        }
                     }
+                    catch { }
                 }
 
-                await Task.Delay(1000*60*5);
+                await Task.Delay(1000*60*30);
             }
         }
 

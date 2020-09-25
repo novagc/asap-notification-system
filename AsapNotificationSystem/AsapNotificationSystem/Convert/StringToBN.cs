@@ -58,8 +58,9 @@ namespace AsapNotificationSystem.Convert
             if (name.ToLower().Contains("все"))
                 return BuildingNumber.All;
 
-            if (bnDictionary.ContainsKey(name))
-                return bnDictionary[name];
+            foreach (var x in bnDictionary.Keys)
+                if (name.Contains(x))
+                    return bnDictionary[x];
 
             return BuildingNumber.Other;
         }
